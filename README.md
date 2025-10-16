@@ -39,8 +39,10 @@ npm run watch
 
 1. **Select a text object** in your Figma file
 2. Run the plugin: `Plugins` → `Development` → `Type Style Sample Creator`
-3. Click the **Create** button in the plugin window
-4. A formatted type style sample will be generated showing:
+3. **(Optional)** Enter a style name (e.g., "H1", "Body Small") to preview the text in the actual font
+4. Click the **Create** button in the plugin window
+5. A formatted type style sample will be generated showing:
+   - Style name preview (if provided) rendered in the actual font
    - Font Family and Weight
    - Font Size
    - Line Height (as percentage)
@@ -52,8 +54,16 @@ The generated sample includes:
 
 ```
 ┌─────────────────────────────────────┐
-│  Font Family/[Family]  Weight/[Style]│
-│  Size/[px]  Line height/[%]  Letter spacing/[px]│
+│  [Style Name Preview]                │
+│  ─────────────────────────────────   │
+│  📝 Font Family/[Family]             │
+│  📝 Weight/[Style]          [Size]   │
+│                                       │
+│  ┌─────────────┐  ┌─────────────┐   │
+│  │ Line height │  │ Letter      │   │
+│  │ 📝 [%]      │  │ spacing     │   │
+│  └─────────────┘  │ 📝 [px]     │   │
+│                   └─────────────┘   │
 └─────────────────────────────────────┘
 ```
 

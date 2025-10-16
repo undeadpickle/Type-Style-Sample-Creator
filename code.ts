@@ -99,18 +99,18 @@ async function createIconTextPair(text: string, fontSize: number = 11, fontWeigh
 }
 
 // Show UI for potential future options
-figma.showUI(__html__, { width: 300, height: 200 });
+figma.showUI(__html__, { width: 300, height: 240 });
 
 // Listen for the create specimen command from the UI
 figma.ui.onmessage = async (msg) => {
   if (msg.type === 'create-specimen') {
-    await createTypeSpecimen();
+    await createTypeSpecimen(msg.styleName);
   } else if (msg.type === 'cancel') {
     figma.closePlugin();
   }
 };
 
-async function createTypeSpecimen() {
+async function createTypeSpecimen(styleName?: string) {
   const selection = figma.currentPage.selection;
 
   // Check if a text node is selected
@@ -157,9 +157,10 @@ async function createTypeSpecimen() {
   // Create the specimen frame
   const specimenFrame = figma.createFrame();
   specimenFrame.name = 'Type Specimen';
+  specimenFrame.resize(280, 100); // Set initial size
   specimenFrame.layoutMode = 'VERTICAL';
-  specimenFrame.primaryAxisSizingMode = 'AUTO';
-  specimenFrame.counterAxisSizingMode = 'AUTO';
+  specimenFrame.primaryAxisSizingMode = 'AUTO'; // Height hugs contents
+  specimenFrame.counterAxisSizingMode = 'FIXED'; // Width fixed at 280
   specimenFrame.itemSpacing = 8;
   specimenFrame.paddingLeft = 16;
   specimenFrame.paddingRight = 16;
@@ -170,6 +171,18 @@ async function createTypeSpecimen() {
   specimenFrame.strokes = [{ type: 'SOLID', color: { r: 0.902, g: 0.902, b: 0.902 } }];
   specimenFrame.strokeWeight = 1;
 
+  // Add style name preview if provided
+  if (styleName && styleName.length > 0) {
+    const stylePreview = await createStyleNamePreview(
+      styleName,
+      fontName,
+      fontSize,
+      typeof lineHeight === 'symbol' ? { unit: 'AUTO' } : lineHeight,
+      typeof letterSpacing === 'symbol' ? { unit: 'PIXELS', value: 0 } : letterSpacing
+    );
+    specimenFrame.appendChild(stylePreview);
+  }
+
   // Row 1: Font Family only
   const row1 = await createBorderedRow('Font Family', fontName.family, null, null, true);
   specimenFrame.appendChild(row1);
@@ -178,7 +191,7 @@ async function createTypeSpecimen() {
   const row2 = await createBorderedRow('Weight', fontName.style, null, `${fontSize}`, true);
   specimenFrame.appendChild(row2);
 
-  // Row 3: Line Height and Letter Spacing (no border)
+  // Row 3: Line Height and Letter Spacing
   const row3 = await createMetricsRow('Line height', lineHeightText, 'Letter spacing', letterSpacingText);
   specimenFrame.appendChild(row3);
 
@@ -197,12 +210,52 @@ async function createTypeSpecimen() {
   figma.closePlugin();
 }
 
+async function createStyleNamePreview(
+  styleName: string,
+  fontName: FontName,
+  fontSize: number,
+  lineHeight: LineHeight,
+  letterSpacing: LetterSpacing
+): Promise<FrameNode> {
+  const previewContainer = figma.createFrame();
+  previewContainer.name = 'Style Preview';
+  previewContainer.resize(248, 100); // Set initial size
+  previewContainer.layoutMode = 'VERTICAL';
+  previewContainer.primaryAxisSizingMode = 'FIXED';
+  previewContainer.counterAxisSizingMode = 'AUTO';
+  previewContainer.itemSpacing = 8;
+  previewContainer.fills = [];
+
+  // Create the text node with the actual font properties
+  const previewText = figma.createText();
+  await figma.loadFontAsync(fontName);
+
+  previewText.fontName = fontName;
+  previewText.fontSize = fontSize;
+  previewText.characters = styleName;
+  previewText.fills = [{ type: 'SOLID', color: { r: 0.102, g: 0.102, b: 0.102 } }];
+
+  // Apply line height
+  if (typeof lineHeight !== 'symbol') {
+    previewText.lineHeight = lineHeight;
+  }
+
+  // Apply letter spacing
+  if (typeof letterSpacing !== 'symbol') {
+    previewText.letterSpacing = letterSpacing;
+  }
+
+  previewContainer.appendChild(previewText);
+
+  return previewContainer;
+}
+
 async function createBorderedRow(label: string, value: string, rightLabel: string | null, rightValue: string | null, useIcon: boolean = true): Promise<FrameNode> {
   const row = figma.createFrame();
+  row.resize(248, 32); // Set initial size
   row.layoutMode = 'HORIZONTAL';
   row.primaryAxisSizingMode = 'FIXED';
   row.counterAxisSizingMode = 'AUTO';
-  row.resize(240, 32);
   row.itemSpacing = 8;
   row.paddingLeft = 12;
   row.paddingRight = 12;
@@ -252,70 +305,55 @@ async function createBorderedRow(label: string, value: string, rightLabel: strin
   return row;
 }
 
+async function createMetricCard(label: string, value: string): Promise<FrameNode> {
+  const card = figma.createFrame();
+  card.resize(120, 45); // Set initial size
+  card.layoutMode = 'VERTICAL';
+  card.primaryAxisSizingMode = 'FIXED';
+  card.counterAxisSizingMode = 'AUTO';
+  card.itemSpacing = 4;
+  card.paddingLeft = 12;
+  card.paddingRight = 12;
+  card.paddingTop = 8;
+  card.paddingBottom = 8;
+  card.fills = [];
+  card.strokes = [{ type: 'SOLID', color: { r: 0.902, g: 0.902, b: 0.902 } }];
+  card.strokeWeight = 1;
+  card.strokeAlign = 'INSIDE';
+  card.cornerRadius = 4;
+
+  // Label text
+  const labelText = figma.createText();
+  await figma.loadFontAsync({ family: 'Inter', style: 'Regular' });
+  labelText.fontName = { family: 'Inter', style: 'Regular' };
+  labelText.fontSize = 10;
+  labelText.characters = label;
+  labelText.fills = [{ type: 'SOLID', color: { r: 0.502, g: 0.502, b: 0.502 } }];
+  card.appendChild(labelText);
+
+  // Value with icon
+  const valueContainer = await createIconTextPair(value, 11, 'Medium');
+  card.appendChild(valueContainer);
+
+  return card;
+}
+
 async function createMetricsRow(leftLabel: string, leftValue: string, rightLabel: string, rightValue: string): Promise<FrameNode> {
   const row = figma.createFrame();
+  row.resize(248, 45); // Set initial size
   row.layoutMode = 'HORIZONTAL';
   row.primaryAxisSizingMode = 'FIXED';
   row.counterAxisSizingMode = 'AUTO';
-  row.resize(240, 48);
-  row.itemSpacing = 0;
-  row.paddingLeft = 12;
-  row.paddingRight = 12;
-  row.paddingTop = 8;
-  row.paddingBottom = 8;
+  row.itemSpacing = 8;
   row.fills = [];
 
-  // Left column
-  const leftCol = figma.createFrame();
-  leftCol.layoutMode = 'VERTICAL';
-  leftCol.primaryAxisSizingMode = 'AUTO';
-  leftCol.counterAxisSizingMode = 'AUTO';
-  leftCol.itemSpacing = 4;
-  leftCol.fills = [];
+  // Left card
+  const leftCard = await createMetricCard(leftLabel, leftValue);
+  row.appendChild(leftCard);
 
-  const leftLabelText = figma.createText();
-  await figma.loadFontAsync({ family: 'Inter', style: 'Regular' });
-  leftLabelText.fontName = { family: 'Inter', style: 'Regular' };
-  leftLabelText.fontSize = 10;
-  leftLabelText.characters = leftLabel;
-  leftLabelText.fills = [{ type: 'SOLID', color: { r: 0.502, g: 0.502, b: 0.502 } }];
-  leftCol.appendChild(leftLabelText);
-
-  const leftValueContainer = await createIconTextPair(leftValue, 11, 'Medium');
-  leftCol.appendChild(leftValueContainer);
-
-  row.appendChild(leftCol);
-
-  // Spacer
-  const spacer = figma.createFrame();
-  spacer.layoutMode = 'HORIZONTAL';
-  spacer.primaryAxisSizingMode = 'FIXED';
-  spacer.counterAxisSizingMode = 'FIXED';
-  spacer.resize(1, 1);
-  spacer.fills = [];
-  spacer.layoutGrow = 1;
-  row.appendChild(spacer);
-
-  // Right column
-  const rightCol = figma.createFrame();
-  rightCol.layoutMode = 'VERTICAL';
-  rightCol.primaryAxisSizingMode = 'AUTO';
-  rightCol.counterAxisSizingMode = 'AUTO';
-  rightCol.itemSpacing = 4;
-  rightCol.fills = [];
-
-  const rightLabelText = figma.createText();
-  await figma.loadFontAsync({ family: 'Inter', style: 'Regular' });
-  rightLabelText.fontName = { family: 'Inter', style: 'Regular' };
-  rightLabelText.fontSize = 10;
-  rightLabelText.characters = rightLabel;
-  rightLabelText.fills = [{ type: 'SOLID', color: { r: 0.502, g: 0.502, b: 0.502 } }];
-  rightCol.appendChild(rightLabelText);
-
-  const rightValueContainer = await createIconTextPair(rightValue, 11, 'Medium');
-  rightCol.appendChild(rightValueContainer);
-
-  row.appendChild(rightCol);
+  // Right card
+  const rightCard = await createMetricCard(rightLabel, rightValue);
+  row.appendChild(rightCard);
 
   return row;
 }

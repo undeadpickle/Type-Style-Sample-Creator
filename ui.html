@@ -68,6 +68,36 @@
     .secondary:hover {
       background-color: #E0E0E0;
     }
+
+    .input-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    label {
+      font-size: 11px;
+      font-weight: 500;
+      color: #333333;
+    }
+
+    input[type="text"] {
+      padding: 8px 12px;
+      font-size: 12px;
+      border: 1px solid #E0E0E0;
+      border-radius: 4px;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      transition: border-color 0.2s;
+    }
+
+    input[type="text"]:focus {
+      outline: none;
+      border-color: #0066FF;
+    }
+
+    input[type="text"]::placeholder {
+      color: #999999;
+    }
   </style>
 </head>
 <body>
@@ -75,6 +105,11 @@
     <div>
       <h2>Type Style Sample Creator</h2>
       <p>Select a text object and click "Create" to generate a formatted type style sample showing all typography properties.</p>
+    </div>
+
+    <div class="input-group">
+      <label for="styleName">Style Name (optional)</label>
+      <input type="text" id="styleName" placeholder="e.g., H1, Body Small, Caption" />
     </div>
 
     <div class="buttons">
@@ -85,12 +120,20 @@
 
   <script>
     document.getElementById('create').onclick = () => {
-      parent.postMessage({ pluginMessage: { type: 'create-specimen' } }, '*');
+      const styleName = document.getElementById('styleName').value.trim();
+      parent.postMessage({ pluginMessage: { type: 'create-specimen', styleName: styleName } }, '*');
     };
 
     document.getElementById('cancel').onclick = () => {
       parent.postMessage({ pluginMessage: { type: 'cancel' } }, '*');
     };
+
+    // Allow Enter key to submit
+    document.getElementById('styleName').addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') {
+        document.getElementById('create').click();
+      }
+    });
   </script>
 </body>
 </html>
