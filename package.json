@@ -1,0 +1,16 @@
+{
+  "name": "type-style-sample-creator",
+  "version": "1.0.0",
+  "description": "A Figma plugin to create type style sample documentation for text objects",
+  "main": "code.js",
+  "scripts": {
+    "build": "tsc",
+    "watch": "tsc --watch"
+  },
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "@figma/plugin-typings": "^1.97.0",
+    "typescript": "^5.3.3"
+  }
+}
