@@ -1,8 +1,16 @@
 # Type Style Sample Creator - Figma Plugin
 
+<p align="center">
+  <img src="assets/Icon.png" alt="Type Style Sample Creator Icon" width="128" height="128">
+</p>
+
 ![Type Style Sample Creator Cover](assets/Cover.png)
 
 A Figma plugin that automatically generates formatted type style sample documentation for selected text objects. Perfect for design systems and typography documentation.
+
+## Demo
+
+https://github.com/user-attachments/assets/Video.mov
 
 ## Features
 
