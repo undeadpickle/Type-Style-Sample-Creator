@@ -4,10 +4,14 @@ A Figma plugin that automatically generates formatted type style sample document
 
 ## Features
 
+- **Batch Processing**: Create specimens for up to 25 text objects at once
+- **Smart Selection**: Automatically filters and processes only text objects
+- **Accurate Positioning**: Works correctly with text in frames, sections, and groups
 - Extract and display all typography properties from selected text
 - Shows: Font Family, Weight, Size, Line Height, and Letter Spacing
+- Optional style name preview rendered in the actual font
 - Clean, formatted layout with auto-layout frames
-- Automatically positioned near the selected text
+- Automatically positioned 20px below each selected text
 
 ## Installation
 
@@ -37,16 +41,23 @@ npm run watch
 
 ## Usage
 
-1. **Select a text object** in your Figma file
+1. **Select one or more text objects** in your Figma file (up to 25 at once)
 2. Run the plugin: `Plugins` → `Development` → `Type Style Sample Creator`
 3. **(Optional)** Enter a style name (e.g., "H1", "Body Small") to preview the text in the actual font
+   - The style name will be applied to all selected text objects
 4. Click the **Create** button in the plugin window
-5. A formatted type style sample will be generated showing:
+5. Formatted type style samples will be generated for each text object showing:
    - Style name preview (if provided) rendered in the actual font
    - Font Family and Weight
    - Font Size
    - Line Height (as percentage)
    - Letter Spacing (in pixels)
+
+**Batch Processing Notes:**
+- Select up to 25 text objects for batch creation
+- Non-text objects in your selection are automatically skipped
+- Each specimen is positioned 20px below its respective text
+- Works correctly with text inside frames, sections, and groups
 
 ## Type Style Sample Layout
 

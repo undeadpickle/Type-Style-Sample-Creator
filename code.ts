@@ -1,3 +1,6 @@
+// Maximum number of text objects that can be processed in a single batch to prevent performance issues
+const MAX_BATCH_SIZE = 25;
+
 // Helper function to create Type icon from Lucide (simplified version)
 async function createTypeIcon(size: number = 12, color: RGB = { r: 0.102, g: 0.102, b: 0.102 }): Promise<FrameNode> {
   const iconFrame = figma.createFrame();
@@ -113,24 +116,62 @@ figma.ui.onmessage = async (msg) => {
 async function createTypeSpecimen(styleName?: string) {
   const selection = figma.currentPage.selection;
 
-  // Check if a text node is selected
+  // Check if any nodes are selected
   if (selection.length === 0) {
-    figma.notify('Please select a text object');
+    figma.notify('Please select one or more text objects');
     return;
   }
 
-  const node = selection[0];
+  // Filter selection to only TEXT nodes
+  const textNodes = selection.filter(node => node.type === 'TEXT') as TextNode[];
 
-  if (node.type !== 'TEXT') {
-    figma.notify('Please select a text object');
+  // Check if any text nodes were found
+  if (textNodes.length === 0) {
+    figma.notify('No text objects selected. Please select at least one text object.');
     return;
   }
 
-  const textNode = node as TextNode;
+  // Check if selection exceeds the maximum batch size
+  if (textNodes.length > MAX_BATCH_SIZE) {
+    figma.notify(`Selection exceeds limit of ${MAX_BATCH_SIZE} text objects. Please select fewer items.`);
+    return;
+  }
 
-  // Load the font to access text properties
-  await figma.loadFontAsync(textNode.fontName as FontName);
+  // Pre-load all unique fonts to optimize performance
+  const uniqueFonts = new Set<string>();
+  for (const textNode of textNodes) {
+    const fontName = textNode.fontName as FontName;
+    const fontKey = `${fontName.family}-${fontName.style}`;
+    if (!uniqueFonts.has(fontKey)) {
+      uniqueFonts.add(fontKey);
+      await figma.loadFontAsync(fontName);
+    }
+  }
 
+  // Create specimens for all text nodes
+  const createdSpecimens: FrameNode[] = [];
+  for (const textNode of textNodes) {
+    const specimen = await createSpecimenForTextNode(textNode, styleName);
+    createdSpecimens.push(specimen);
+  }
+
+  // Select all created specimens
+  figma.currentPage.selection = createdSpecimens;
+  figma.viewport.scrollAndZoomIntoView(createdSpecimens);
+
+  // Show success message
+  const skippedCount = selection.length - textNodes.length;
+  if (skippedCount > 0) {
+    figma.notify(`Created ${textNodes.length} specimen(s) (${skippedCount} non-text object(s) skipped)`);
+  } else {
+    figma.notify(`Created ${textNodes.length} type specimen(s) successfully!`);
+  }
+
+  figma.closePlugin();
+}
+
+// Helper function to create a specimen for a single text node
+async function createSpecimenForTextNode(textNode: TextNode, styleName?: string): Promise<FrameNode> {
   // Extract text properties
   const fontName = textNode.fontName as FontName;
   const fontSize = textNode.fontSize as number;
@@ -195,19 +236,21 @@ async function createTypeSpecimen(styleName?: string) {
   const row3 = await createMetricsRow('Line height', lineHeightText, 'Letter spacing', letterSpacingText);
   specimenFrame.appendChild(row3);
 
-  // Position the specimen frame near the selected text
-  specimenFrame.x = textNode.x;
-  specimenFrame.y = textNode.y + textNode.height + 20;
+  // Position the specimen frame using absolute coordinates (fixes positioning in nested frames)
+  const bounds = textNode.absoluteBoundingBox;
+  if (bounds) {
+    specimenFrame.x = bounds.x;
+    specimenFrame.y = bounds.y + bounds.height + 20;
+  } else {
+    // Fallback to relative positioning if absoluteBoundingBox is not available
+    specimenFrame.x = textNode.x;
+    specimenFrame.y = textNode.y + textNode.height + 20;
+  }
 
   // Add to the current page
   figma.currentPage.appendChild(specimenFrame);
 
-  // Select the new specimen frame
-  figma.currentPage.selection = [specimenFrame];
-  figma.viewport.scrollAndZoomIntoView([specimenFrame]);
-
-  figma.notify('Type specimen created successfully!');
-  figma.closePlugin();
+  return specimenFrame;
 }
 
 async function createStyleNamePreview(

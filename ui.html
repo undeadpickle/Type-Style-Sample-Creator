@@ -51,6 +51,11 @@
       transition: background-color 0.2s;
     }
 
+    button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
     .primary {
       background-color: #0066FF;
       color: white;
@@ -98,13 +103,18 @@
     input[type="text"]::placeholder {
       color: #999999;
     }
+
+    input[type="text"]:disabled {
+      background-color: #F5F5F5;
+      cursor: not-allowed;
+    }
   </style>
 </head>
 <body>
   <div class="container">
     <div>
       <h2>Type Style Sample Creator</h2>
-      <p>Select a text object and click "Create" to generate a formatted type style sample showing all typography properties.</p>
+      <p>Select one or more text objects and click "Create" to generate formatted type style samples showing all typography properties.</p>
     </div>
 
     <div class="input-group">
@@ -119,19 +129,29 @@
   </div>
 
   <script>
-    document.getElementById('create').onclick = () => {
-      const styleName = document.getElementById('styleName').value.trim();
+    const createButton = document.getElementById('create');
+    const cancelButton = document.getElementById('cancel');
+    const styleNameInput = document.getElementById('styleName');
+
+    createButton.onclick = () => {
+      // Disable button and input immediately to prevent multiple clicks
+      createButton.disabled = true;
+      cancelButton.disabled = true;
+      styleNameInput.disabled = true;
+      createButton.textContent = 'Creating...';
+
+      const styleName = styleNameInput.value.trim();
       parent.postMessage({ pluginMessage: { type: 'create-specimen', styleName: styleName } }, '*');
     };
 
-    document.getElementById('cancel').onclick = () => {
+    cancelButton.onclick = () => {
       parent.postMessage({ pluginMessage: { type: 'cancel' } }, '*');
     };
 
     // Allow Enter key to submit
-    document.getElementById('styleName').addEventListener('keypress', (e) => {
-      if (e.key === 'Enter') {
-        document.getElementById('create').click();
+    styleNameInput.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter' && !createButton.disabled) {
+        createButton.click();
       }
     });
   </script>
