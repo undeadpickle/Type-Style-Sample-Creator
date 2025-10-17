@@ -1,4 +1,4 @@
-<p align="center">
+<p align="left">
   <img src="assets/Icon.png" alt="Type Style Sample Creator Icon" width="128" height="128">
 </p>
 
@@ -10,9 +10,7 @@ A Figma plugin that automatically generates formatted type style sample document
 
 ## Demo
 
-https://github.com/user-attachments/assets/Video.mov
-
-<video src="assets/Video.mov" width="100%" controls></video>
+![Demo](assets/Video.mov)
 
 ## Features
 
