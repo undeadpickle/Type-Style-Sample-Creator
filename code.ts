@@ -107,13 +107,16 @@ figma.showUI(__html__, { width: 300, height: 240 });
 // Listen for the create specimen command from the UI
 figma.ui.onmessage = async (msg) => {
   if (msg.type === 'create-specimen') {
-    await createTypeSpecimen(msg.styleName);
+    await createTypeSpecimen(msg.styleName, msg.showColor);
   } else if (msg.type === 'cancel') {
     figma.closePlugin();
+  } else if (msg.type === 'resize') {
+    // Resize UI based on content height from iframe
+    figma.ui.resize(msg.width, msg.height);
   }
 };
 
-async function createTypeSpecimen(styleName?: string) {
+async function createTypeSpecimen(styleName?: string, showColor: boolean = false) {
   const selection = figma.currentPage.selection;
 
   // Check if any nodes are selected
@@ -151,7 +154,7 @@ async function createTypeSpecimen(styleName?: string) {
   // Create specimens for all text nodes
   const createdSpecimens: FrameNode[] = [];
   for (const textNode of textNodes) {
-    const specimen = await createSpecimenForTextNode(textNode, styleName);
+    const specimen = await createSpecimenForTextNode(textNode, styleName, showColor);
     createdSpecimens.push(specimen);
   }
 
@@ -171,7 +174,7 @@ async function createTypeSpecimen(styleName?: string) {
 }
 
 // Helper function to create a specimen for a single text node
-async function createSpecimenForTextNode(textNode: TextNode, styleName?: string): Promise<FrameNode> {
+async function createSpecimenForTextNode(textNode: TextNode, styleName?: string, showColor: boolean = false): Promise<FrameNode> {
   // Extract text properties
   const fontName = textNode.fontName as FontName;
   const fontSize = textNode.fontSize as number;
@@ -220,6 +223,40 @@ async function createSpecimenForTextNode(textNode: TextNode, styleName?: string)
     caseText = 'Mixed';
   }
 
+  // Extract text color (if showColor enabled)
+  let colorHex: string | null = null;
+  let colorRGB: string | null = null;
+  let colorValue: RGB | null = null;
+
+  if (showColor) {
+    const fills = textNode.fills;
+
+    // Handle mixed fills
+    if (typeof fills === 'symbol') {
+      colorHex = 'Mixed';
+      colorRGB = 'Mixed';
+    }
+    // Handle array of fills
+    else if (Array.isArray(fills) && fills.length > 0) {
+      // Find first solid fill
+      const solidFill = fills.find(fill => fill.type === 'SOLID');
+
+      if (solidFill && solidFill.type === 'SOLID') {
+        const rgb = solidFill.color;
+        colorValue = rgb;
+
+        // Convert RGB (0-1) to (0-255)
+        const r = Math.round(rgb.r * 255);
+        const g = Math.round(rgb.g * 255);
+        const b = Math.round(rgb.b * 255);
+
+        // Generate hex and RGB strings
+        colorHex = rgbToHex(r, g, b);
+        colorRGB = `RGB(${r}, ${g}, ${b})`;
+      }
+    }
+  }
+
   // Create the specimen frame
   const specimenFrame = figma.createFrame();
   specimenFrame.name = 'Type Specimen';
@@ -244,7 +281,10 @@ async function createSpecimenForTextNode(textNode: TextNode, styleName?: string)
       fontName,
       fontSize,
       typeof lineHeight === 'symbol' ? { unit: 'AUTO' } : lineHeight,
-      typeof letterSpacing === 'symbol' ? { unit: 'PIXELS', value: 0 } : letterSpacing
+      typeof letterSpacing === 'symbol' ? { unit: 'PIXELS', value: 0 } : letterSpacing,
+      textNode.textDecoration,
+      textNode.textCase,
+      textNode.fills
     );
     specimenFrame.appendChild(stylePreview);
   }
@@ -272,6 +312,12 @@ async function createSpecimenForTextNode(textNode: TextNode, styleName?: string)
     specimenFrame.appendChild(row4);
   }
 
+  // Row 5: Color (only if showColor enabled and color exists)
+  if (showColor && colorHex !== null) {
+    const colorRow = await createColorRow(colorHex, colorRGB!, colorValue);
+    specimenFrame.appendChild(colorRow);
+  }
+
   // Position the specimen frame using absolute coordinates (fixes positioning in nested frames)
   const bounds = textNode.absoluteBoundingBox;
   if (bounds) {
@@ -294,7 +340,10 @@ async function createStyleNamePreview(
   fontName: FontName,
   fontSize: number,
   lineHeight: LineHeight,
-  letterSpacing: LetterSpacing
+  letterSpacing: LetterSpacing,
+  textDecoration: TextDecoration | typeof figma.mixed,
+  textCase: TextCase | typeof figma.mixed,
+  fills: readonly Paint[] | typeof figma.mixed
 ): Promise<FrameNode> {
   const previewContainer = figma.createFrame();
   previewContainer.name = 'Style Preview';
@@ -312,7 +361,14 @@ async function createStyleNamePreview(
   previewText.fontName = fontName;
   previewText.fontSize = fontSize;
   previewText.characters = styleName;
-  previewText.fills = [{ type: 'SOLID', color: { r: 0.102, g: 0.102, b: 0.102 } }];
+
+  // Apply fills (use original text color)
+  if (typeof fills !== 'symbol') {
+    previewText.fills = fills;
+  } else {
+    // Fallback to dark gray if mixed
+    previewText.fills = [{ type: 'SOLID', color: { r: 0.102, g: 0.102, b: 0.102 } }];
+  }
 
   // Apply line height
   if (typeof lineHeight !== 'symbol') {
@@ -322,6 +378,16 @@ async function createStyleNamePreview(
   // Apply letter spacing
   if (typeof letterSpacing !== 'symbol') {
     previewText.letterSpacing = letterSpacing;
+  }
+
+  // Apply text decoration
+  if (typeof textDecoration !== 'symbol') {
+    previewText.textDecoration = textDecoration;
+  }
+
+  // Apply text case
+  if (typeof textCase !== 'symbol') {
+    previewText.textCase = textCase;
   }
 
   previewContainer.appendChild(previewText);
@@ -389,7 +455,8 @@ async function createMetricCard(label: string, value: string): Promise<FrameNode
   card.resize(120, 45); // Set initial size
   card.layoutMode = 'VERTICAL';
   card.primaryAxisSizingMode = 'FIXED';
-  card.counterAxisSizingMode = 'AUTO';
+  card.counterAxisSizingMode = 'FIXED'; // Fill height instead of hug
+  card.primaryAxisAlignItems = 'CENTER'; // Center content vertically
   card.itemSpacing = 4;
   card.paddingLeft = 12;
   card.paddingRight = 12;
@@ -433,6 +500,72 @@ async function createMetricsRow(leftLabel: string, leftValue: string, rightLabel
   // Right card
   const rightCard = await createMetricCard(rightLabel, rightValue);
   row.appendChild(rightCard);
+
+  return row;
+}
+
+// Helper function to convert RGB (0-255) to hex
+function rgbToHex(r: number, g: number, b: number): string {
+  const toHex = (n: number) => {
+    const hex = n.toString(16).toUpperCase();
+    return hex.length === 1 ? '0' + hex : hex;
+  };
+  return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
+}
+
+// Helper function to create a color swatch
+function createColorSwatch(color: RGB, size: number = 16): FrameNode {
+  const swatch = figma.createFrame();
+  swatch.name = 'Color Swatch';
+  swatch.resize(size, size);
+  swatch.fills = [{ type: 'SOLID', color: color }];
+  swatch.cornerRadius = 2; // 2px corner radius as specified
+  // No stroke on swatch
+  return swatch;
+}
+
+// Helper function to create color row with swatch, hex, and RGB values
+async function createColorRow(hex: string, rgb: string, color: RGB | null): Promise<FrameNode> {
+  const row = figma.createFrame();
+  row.resize(248, 32);
+  row.layoutMode = 'HORIZONTAL';
+  row.primaryAxisSizingMode = 'FIXED';
+  row.counterAxisSizingMode = 'AUTO';
+  row.itemSpacing = 8;
+  row.paddingLeft = 12;
+  row.paddingRight = 12;
+  row.paddingTop = 8;
+  row.paddingBottom = 8;
+  row.fills = [];
+  row.strokes = [{ type: 'SOLID', color: { r: 0.902, g: 0.902, b: 0.902 } }];
+  row.strokeWeight = 1;
+  row.strokeAlign = 'INSIDE';
+  row.cornerRadius = 4;
+
+  // Create horizontal container for swatch + label + hex
+  const leftContainer = figma.createFrame();
+  leftContainer.layoutMode = 'HORIZONTAL';
+  leftContainer.primaryAxisSizingMode = 'AUTO';
+  leftContainer.counterAxisSizingMode = 'AUTO';
+  leftContainer.itemSpacing = 8;
+  leftContainer.fills = [];
+
+  // Add color swatch (skip if mixed or no color)
+  if (color !== null && hex !== 'Mixed') {
+    const swatch = createColorSwatch(color, 16);
+    leftContainer.appendChild(swatch);
+  }
+
+  // Add "#HEX / RGB(r, g, b)" text with Medium weight
+  const colorText = figma.createText();
+  await figma.loadFontAsync({ family: 'Inter', style: 'Medium' });
+  colorText.fontName = { family: 'Inter', style: 'Medium' };
+  colorText.fontSize = 11;
+  colorText.characters = `${hex} / ${rgb}`;
+  colorText.fills = [{ type: 'SOLID', color: { r: 0.102, g: 0.102, b: 0.102 } }];
+  leftContainer.appendChild(colorText);
+
+  row.appendChild(leftContainer);
 
   return row;
 }

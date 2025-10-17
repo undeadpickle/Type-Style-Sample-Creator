@@ -57,12 +57,12 @@
     }
 
     .primary {
-      background-color: #0066FF;
+      background-color: #5E00FF;
       color: white;
     }
 
     .primary:hover {
-      background-color: #0052CC;
+      background-color: #4B00CC;
     }
 
     .secondary {
@@ -97,7 +97,7 @@
 
     input[type="text"]:focus {
       outline: none;
-      border-color: #0066FF;
+      border-color: #5E00FF;
     }
 
     input[type="text"]::placeholder {
@@ -107,6 +107,22 @@
     input[type="text"]:disabled {
       background-color: #F5F5F5;
       cursor: not-allowed;
+    }
+
+    .checkbox-label {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      cursor: pointer;
+      font-size: 12px;
+      color: #333333;
+    }
+
+    input[type="checkbox"] {
+      cursor: pointer;
+      width: 14px;
+      height: 14px;
+      accent-color: #5E00FF;
     }
   </style>
 </head>
@@ -118,8 +134,15 @@
     </div>
 
     <div class="input-group">
-      <label for="styleName">Style Name (optional)</label>
+      <label for="styleName">Preview text (optional)</label>
       <input type="text" id="styleName" placeholder="e.g., H1, Body Small, Caption" />
+    </div>
+
+    <div class="input-group">
+      <label class="checkbox-label">
+        <input type="checkbox" id="showColor" />
+        <span>Show HEX/RGB color values</span>
+      </label>
     </div>
 
     <div class="buttons">
@@ -132,16 +155,50 @@
     const createButton = document.getElementById('create');
     const cancelButton = document.getElementById('cancel');
     const styleNameInput = document.getElementById('styleName');
+    const showColorCheckbox = document.getElementById('showColor');
+
+    // Function to resize UI based on content height
+    function resizeUI() {
+      // Get the actual height of the container content
+      const container = document.querySelector('.container');
+      const containerHeight = container.offsetHeight;
+
+      // Add body padding (16px top + 16px bottom) + buffer for safety
+      const totalHeight = containerHeight + 32 + 8;
+
+      // Request resize from plugin code
+      parent.postMessage({
+        pluginMessage: {
+          type: 'resize',
+          width: 300,
+          height: totalHeight
+        }
+      }, '*');
+    }
+
+    // Call on page load
+    window.addEventListener('load', resizeUI);
+
+    // Call when window is resized (for safety)
+    window.addEventListener('resize', resizeUI);
 
     createButton.onclick = () => {
       // Disable button and input immediately to prevent multiple clicks
       createButton.disabled = true;
       cancelButton.disabled = true;
       styleNameInput.disabled = true;
+      showColorCheckbox.disabled = true;
       createButton.textContent = 'Creating...';
 
       const styleName = styleNameInput.value.trim();
-      parent.postMessage({ pluginMessage: { type: 'create-specimen', styleName: styleName } }, '*');
+      const showColor = showColorCheckbox.checked;
+      parent.postMessage({
+        pluginMessage: {
+          type: 'create-specimen',
+          styleName: styleName,
+          showColor: showColor
+        }
+      }, '*');
     };
 
     cancelButton.onclick = () => {

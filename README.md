@@ -8,9 +8,11 @@ A Figma plugin that automatically generates formatted type style sample document
 - **Smart Selection**: Automatically filters and processes only text objects
 - **Accurate Positioning**: Works correctly with text in frames, sections, and groups
 - Extract and display all typography properties from selected text
-- Shows: Font Family, Weight, Size, Line Height, Letter Spacing, Text Decoration, and Text Case
-- Optional style name preview rendered in the actual font
+- Shows: Font Family, Weight, Size, Line Height, Letter Spacing, Text Decoration, Text Case, and Color
+- Optional preview text rendered with exact text properties (color, decoration, case)
+- Optional color display with hex, RGB values, and color swatch
 - Clean, formatted layout with auto-layout frames
+- Responsive UI that adapts to content
 - Automatically positioned 20px below each selected text
 
 ## Installation
@@ -43,17 +45,19 @@ npm run watch
 
 1. **Select one or more text objects** in your Figma file (up to 25 at once)
 2. Run the plugin: `Plugins` → `Development` → `Type Style Sample Creator`
-3. **(Optional)** Enter a style name (e.g., "H1", "Body Small") to preview the text in the actual font
-   - The style name will be applied to all selected text objects
-4. Click the **Create** button in the plugin window
-5. Formatted type style samples will be generated for each text object showing:
-   - Style name preview (if provided) rendered in the actual font
+3. **(Optional)** Enter preview text (e.g., "H1", "Body Small") to show the text in the actual font
+   - The preview text will use all properties from the selected text (color, decoration, case)
+4. **(Optional)** Check "Show color values" to include color information in the specimen
+5. Click the **Create** button in the plugin window
+6. Formatted type style samples will be generated for each text object showing:
+   - Preview text (if provided) rendered with exact text properties
    - Font Family and Weight
    - Font Size
    - Line Height (as percentage)
    - Letter Spacing (in pixels)
    - Text Decoration (if applied: underline, strikethrough)
    - Text Case (if transformed: uppercase, lowercase, title case, etc.)
+   - Text Color (if "Show color values" enabled: hex, RGB, and color swatch)
 
 **Batch Processing Notes:**
 - Select up to 25 text objects for batch creation
@@ -67,7 +71,7 @@ The generated sample includes:
 
 ```
 ┌─────────────────────────────────────┐
-│  [Style Name Preview]                │
+│  [Preview Text]                      │
 │  ─────────────────────────────────   │
 │  📝 Font Family/[Family]             │
 │  📝 Weight/[Style]          [Size]   │
@@ -81,6 +85,8 @@ The generated sample includes:
 │  │ Decoration  │  │ Case        │   │ (if applicable)
 │  │ 📝 [value]  │  │ 📝 [value]  │   │
 │  └─────────────┘  └─────────────┘   │
+│                                       │
+│  [■] #HEX / RGB(r, g, b)             │ (if "Show color values" enabled)
 └─────────────────────────────────────┘
 ```
 
