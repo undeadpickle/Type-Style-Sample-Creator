@@ -8,7 +8,7 @@ A Figma plugin that automatically generates formatted type style sample document
 - **Smart Selection**: Automatically filters and processes only text objects
 - **Accurate Positioning**: Works correctly with text in frames, sections, and groups
 - Extract and display all typography properties from selected text
-- Shows: Font Family, Weight, Size, Line Height, and Letter Spacing
+- Shows: Font Family, Weight, Size, Line Height, Letter Spacing, Text Decoration, and Text Case
 - Optional style name preview rendered in the actual font
 - Clean, formatted layout with auto-layout frames
 - Automatically positioned 20px below each selected text
@@ -52,6 +52,8 @@ npm run watch
    - Font Size
    - Line Height (as percentage)
    - Letter Spacing (in pixels)
+   - Text Decoration (if applied: underline, strikethrough)
+   - Text Case (if transformed: uppercase, lowercase, title case, etc.)
 
 **Batch Processing Notes:**
 - Select up to 25 text objects for batch creation
@@ -73,8 +75,12 @@ The generated sample includes:
 │  ┌─────────────┐  ┌─────────────┐   │
 │  │ Line height │  │ Letter      │   │
 │  │ 📝 [%]      │  │ spacing     │   │
-│  └─────────────┘  │ 📝 [px]     │   │
-│                   └─────────────┘   │
+│  └─────────────┘  └─────────────┘   │
+│                                       │
+│  ┌─────────────┐  ┌─────────────┐   │
+│  │ Decoration  │  │ Case        │   │ (if applicable)
+│  │ 📝 [value]  │  │ 📝 [value]  │   │
+│  └─────────────┘  └─────────────┘   │
 └─────────────────────────────────────┘
 ```
 

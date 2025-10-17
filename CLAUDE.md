@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-This is a Figma plugin that generates type specimen documentation for selected text objects. It extracts typography properties (font family, weight, size, line height, letter spacing) and creates a formatted frame displaying these values.
+This is a Figma plugin that generates type specimen documentation for selected text objects. It extracts typography properties (font family, weight, size, line height, letter spacing, text decoration, text case) and creates a formatted frame displaying these values.
 
 **Key Features:**
 - Supports batch processing of up to 25 text objects at once
@@ -32,7 +32,8 @@ This is a Figma plugin that generates type specimen documentation for selected t
 5. If style name provided, creates preview using `createStyleNamePreview()` with actual font properties
 6. Plugin creates bordered rows using `createBorderedRow()` helper for Font Family and Weight/Size
 7. Creates side-by-side metric cards using `createMetricCard()` for Line Height and Letter Spacing
-8. Each specimen positioned 20px below its respective text using `absoluteBoundingBox` for accurate placement
+8. Conditionally adds Decoration/Case row if either property is non-default (using `createMetricsRow()`)
+9. Each specimen positioned 20px below its respective text using `absoluteBoundingBox` for accurate placement
 
 ### Figma API Requirements
 - Must call `figma.loadFontAsync()` before accessing/creating text nodes
@@ -44,6 +45,11 @@ This is a Figma plugin that generates type specimen documentation for selected t
 ### Unit Conversions
 - **Line height**: Converts PIXELS and PERCENT units to percentage relative to font size
 - **Letter spacing**: Converts PERCENT units to pixels (PIXELS units used directly)
+
+### Text Properties
+- **Text decoration**: Displays "Underline" or "Strikethrough" when applied, hidden when "NONE"
+- **Text case**: Displays transformation (Uppercase, Lowercase, Title Case, Small Caps) when applied, hidden when "ORIGINAL"
+- **Mixed values**: Shows "Mixed" when text has multiple different values applied to character ranges
 
 ## Batch Processing
 - **Maximum batch size**: 25 text objects (defined as `MAX_BATCH_SIZE` constant)

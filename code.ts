@@ -195,6 +195,31 @@ async function createSpecimenForTextNode(textNode: TextNode, styleName?: string)
     letterSpacingText = (letterSpacing.value / 100 * fontSize).toFixed(2);
   }
 
+  // Extract text decoration
+  const textDecoration = textNode.textDecoration;
+  let decorationText: string | null = null;
+  if (typeof textDecoration !== 'symbol' && textDecoration !== 'NONE') {
+    decorationText = textDecoration === 'UNDERLINE' ? 'Underline' : 'Strikethrough';
+  } else if (typeof textDecoration === 'symbol') {
+    decorationText = 'Mixed';
+  }
+
+  // Extract text case
+  const textCase = textNode.textCase;
+  let caseText: string | null = null;
+  if (typeof textCase !== 'symbol' && textCase !== 'ORIGINAL') {
+    const caseMap: { [key: string]: string } = {
+      'UPPER': 'Uppercase',
+      'LOWER': 'Lowercase',
+      'TITLE': 'Title Case',
+      'SMALL_CAPS': 'Small Caps',
+      'SMALL_CAPS_FORCED': 'Small Caps Forced'
+    };
+    caseText = caseMap[textCase] || textCase;
+  } else if (typeof textCase === 'symbol') {
+    caseText = 'Mixed';
+  }
+
   // Create the specimen frame
   const specimenFrame = figma.createFrame();
   specimenFrame.name = 'Type Specimen';
@@ -236,6 +261,17 @@ async function createSpecimenForTextNode(textNode: TextNode, styleName?: string)
   const row3 = await createMetricsRow('Line height', lineHeightText, 'Letter spacing', letterSpacingText);
   specimenFrame.appendChild(row3);
 
+  // Row 4: Decoration and Case (only if at least one exists)
+  if (decorationText !== null || caseText !== null) {
+    const row4 = await createMetricsRow(
+      'Decoration',
+      decorationText || '-',
+      'Case',
+      caseText || '-'
+    );
+    specimenFrame.appendChild(row4);
+  }
+
   // Position the specimen frame using absolute coordinates (fixes positioning in nested frames)
   const bounds = textNode.absoluteBoundingBox;
   if (bounds) {
@@ -264,7 +300,7 @@ async function createStyleNamePreview(
   previewContainer.name = 'Style Preview';
   previewContainer.resize(248, 100); // Set initial size
   previewContainer.layoutMode = 'VERTICAL';
-  previewContainer.primaryAxisSizingMode = 'FIXED';
+  previewContainer.primaryAxisSizingMode = 'AUTO'; // Hug content vertically
   previewContainer.counterAxisSizingMode = 'AUTO';
   previewContainer.itemSpacing = 8;
   previewContainer.fills = [];
