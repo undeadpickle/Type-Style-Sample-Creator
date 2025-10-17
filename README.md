@@ -1,8 +1,8 @@
-# Type Style Sample Creator - Figma Plugin
-
 <p align="center">
   <img src="assets/Icon.png" alt="Type Style Sample Creator Icon" width="128" height="128">
 </p>
+
+# Type Style Sample Creator - Figma Plugin
 
 ![Type Style Sample Creator Cover](assets/Cover.png)
 
@@ -11,6 +11,8 @@ A Figma plugin that automatically generates formatted type style sample document
 ## Demo
 
 https://github.com/user-attachments/assets/Video.mov
+
+<video src="assets/Video.mov" width="100%" controls></video>
 
 ## Features
 
@@ -30,11 +32,13 @@ https://github.com/user-attachments/assets/Video.mov
 ### Development Setup
 
 1. Install dependencies:
+
 ```bash
 npm install
 ```
 
 2. Build the plugin:
+
 ```bash
 npm run build
 ```
@@ -47,6 +51,7 @@ npm run build
 ### Watch Mode (for development)
 
 To automatically rebuild when you make changes:
+
 ```bash
 npm run watch
 ```
@@ -70,6 +75,7 @@ npm run watch
    - Text Color (if "Show color values" enabled: hex, RGB, and color swatch)
 
 **Batch Processing Notes:**
+
 - Select up to 25 text objects for batch creation
 - Non-text objects in your selection are automatically skipped
 - Each specimen is positioned 20px below its respective text
@@ -124,4 +130,5 @@ You can modify the appearance in [code.ts](code.ts):
 ## License
 
 MIT
+
 # Type-Style-Sample-Creator
